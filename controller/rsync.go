@@ -3,7 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
-	"oshelper/consts"
+	"github.com/ChamHerry/oshelper/consts"
 
 	"github.com/gogf/gf/v2/frame/g"
 )

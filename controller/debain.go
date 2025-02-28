@@ -2,7 +2,7 @@ package controller
 
 import (
 	"context"
-	"oshelper/consts"
+	"github.com/ChamHerry/oshelper/consts"
 	"path/filepath"
 	"regexp"
 	"strings"

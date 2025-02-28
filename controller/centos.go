@@ -3,7 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
-	"oshelper/consts"
+	"github.com/ChamHerry/oshelper/consts"
 	"regexp"
 	"strings"
 

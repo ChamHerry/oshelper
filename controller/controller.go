@@ -5,10 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ChamHerry/oshelper/consts"
+	"github.com/ChamHerry/oshelper/utils"
 	"net"
 	"os/exec"
-	"oshelper/consts"
-	"oshelper/utils"
 	"strconv"
 	"strings"
 

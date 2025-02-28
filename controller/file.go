@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"oshelper/consts"
-	"oshelper/utils"
+	"github.com/ChamHerry/oshelper/consts"
+	"github.com/ChamHerry/oshelper/utils"
 )
 
 // 下载文件
