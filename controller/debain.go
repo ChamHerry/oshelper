@@ -2,10 +2,11 @@ package controller
 
 import (
 	"context"
-	"github.com/ChamHerry/oshelper/consts"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/ChamHerry/oshelper/consts"
 )
 
 func (s *Controller) getDebianSystemDetailVersion(config consts.SystemInfo) (ret string, err error) {

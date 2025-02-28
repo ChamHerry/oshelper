@@ -4,6 +4,7 @@ go 1.23.1
 
 require (
 	github.com/gogf/gf/v2 v2.8.3
+	github.com/shirou/gopsutil v3.21.11+incompatible
 	golang.org/x/crypto v0.35.0
 )
 
@@ -24,7 +25,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/tklauser/go-sysconf v0.3.14 // indirect
 	github.com/tklauser/numcpus v0.8.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
