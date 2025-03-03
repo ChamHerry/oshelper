@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-// 测试网络是否连通
+// TestNetwork 测试网络是否连通
 func TestNetwork(ip string, port int) bool {
 	// 先测试是否能连接到设备
 	// 创建一个UDP连接

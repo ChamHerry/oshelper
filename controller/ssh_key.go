@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/ChamHerry/oshelper/consts"
 	"github.com/gogf/gf/v2/frame/g"
@@ -78,36 +79,75 @@ func getSSHKeyFilePath(keyType string) string {
 	}
 }
 
-// 备份AuthorizedKeys文件
+// BackupAuthorizedKeys 备份AuthorizedKeys文件
 func (s *Controller) BackupAuthorizedKeys(ctx context.Context) error {
-	checkBackupCmd := "test -f ~/.ssh/authorized_keys.migration_scheduling.bak"
-	_, err := s.RunCommand(consts.RunCommandConfig{
-		Command: checkBackupCmd,
-	})
-	if err == nil {
+	exit := s.IsFileOrDirExist(ctx, "~/.ssh/authorized_keys.migration_scheduling.bak")
+	if exit {
 		// 备份文件已存在，无需重复备份
 		return nil
 	}
-	g.Log().Debug(ctx, "backup authorized keys")
+	err := s.CopyFile(ctx, "~/.ssh/authorized_keys", "~/.ssh/authorized_keys.migration_scheduling.bak")
+	if err != nil {
+		return err
+	}
 	return nil
-	// authorizedKeysFilePath := "~/.ssh/authorized_keys"
-	// if !s.IsFileExist(ctx, authorizedKeysFilePath) {
-	// 	return fmt.Errorf("file not found: %s", authorizedKeysFilePath)
-	// }
-	// backupFilePath := authorizedKeysFilePath + ".backup"
-	// if s.IsFileExist(ctx, backupFilePath) {
-	// 	return fmt.Errorf("backup file already exists: %s", backupFilePath)
-	// }
-	// return s.CopyFile(ctx, authorizedKeysFilePath, backupFilePath)
 }
 
-// 恢复AuthorizedKeys文件
+// RestoreAuthorizedKeys 恢复AuthorizedKeys文件
 func (s *Controller) RestoreAuthorizedKeys(ctx context.Context) error {
-	// authorizedKeysFilePath := "~/.ssh/authorized_keys"
-	// backupFilePath := authorizedKeysFilePath + ".backup"
-	// if !s.IsFileExist(ctx, backupFilePath) {
-	// 	return fmt.Errorf("backup file not found: %s", backupFilePath)
-	// }
-	// return s.CopyFile(ctx, backupFilePath, authorizedKeysFilePath)
+	backupFilePath := "~/.ssh/authorized_keys.migration_scheduling.bak"
+	if !s.IsFileOrDirExist(ctx, backupFilePath) {
+		return fmt.Errorf("backup file not found: %s", backupFilePath)
+	}
+	return s.CopyFile(ctx, backupFilePath, "~/.ssh/authorized_keys")
+}
+
+// AddSSHKey 添加免密认证
+func (s *Controller) AddSSHKey(ctx context.Context, in consts.AddSSHKeyParam) error {
+	authorizedKeysFilePath := "~/.ssh/authorized_keys"
+	if !s.IsFileOrDirExist(ctx, authorizedKeysFilePath) {
+		err := s.CreateFile(ctx, authorizedKeysFilePath)
+		if err != nil {
+			return err
+		}
+	}
+	sshKeyContent, err := s.GetSSHPublicKey(ctx, consts.GetSSHKeyParam{
+		KeyType:  in.KeyType,
+		Comment:  in.Comment,
+		Generate: true,
+	})
+	if err != nil {
+		return err
+	}
+	remoteController, err := NewController(in.SSHConfig)
+	if err != nil {
+		return err
+	}
+	if in.IsBackup {
+		// 备份authorized_keys文件
+		g.Log().Debug(ctx, "备份authorized_keys文件")
+		err = remoteController.BackupAuthorizedKeys(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	// 查看authorized_keys文件内容
+	authorizedKeysFileContent, err := remoteController.GetFileContent(ctx, authorizedKeysFilePath)
+	if err != nil {
+		return err
+	}
+	if strings.Contains(authorizedKeysFileContent, sshKeyContent.PubKeyContent) {
+		g.Log().Debug(ctx, "authorized_keys文件已存在，无需重复添加")
+		return nil
+	}
+	// 写入authorized_keys文件
+	err = remoteController.WriteFile(ctx, consts.WriteFileParam{
+		FilePath:  authorizedKeysFilePath,
+		Content:   sshKeyContent.PubKeyContent,
+		Overwrite: false,
+	})
+	if err != nil {
+		return err
+	}
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/ChamHerry/oshelper/consts"
 	"github.com/ChamHerry/oshelper/utils"
+	"github.com/gogf/gf/v2/frame/g"
 )
 
 // DownloadFile 下载文件
@@ -110,4 +111,75 @@ func (s *Controller) GetFileContent(ctx context.Context, in string) (out string,
 		return out, err
 	}
 	return out, nil
+}
+
+// CopyFile 复制文件
+func (s *Controller) CopyFile(ctx context.Context, in, out string) (err error) {
+	g.Log().Infof(ctx, "CopyFile: %s -> %s", in, out)
+	if !s.IsFileOrDirExist(ctx, in) {
+		return fmt.Errorf("file not found: %s", in)
+	}
+	if s.IsFileOrDirExist(ctx, out) {
+		return fmt.Errorf("file already exists: %s", out)
+	}
+	command := "cp -r " + in + " " + out
+	_, err = s.RunCommand(consts.RunCommandConfig{
+		Command:                command,
+		RunCommandFailedCounts: 0,
+	})
+	return err
+}
+
+// CreateDir 创建文件夹
+func (s *Controller) CreateDir(ctx context.Context, in string) (err error) {
+	if s.IsFileOrDirExist(ctx, in) {
+		return nil
+	}
+	command := "mkdir -p " + in
+	_, err = s.RunCommand(consts.RunCommandConfig{
+		Command:                command,
+		RunCommandFailedCounts: 0,
+	})
+	return err
+}
+
+// CreateFile 创建文件
+func (s *Controller) CreateFile(ctx context.Context, in string) (err error) {
+	var command string
+	if !s.IsFileOrDirExist(ctx, filepath.Dir(in)) {
+		err = s.CreateDir(ctx, filepath.Dir(in))
+		if err != nil {
+			return err
+		}
+	}
+	command = "touch " + in
+	_, err = s.RunCommand(consts.RunCommandConfig{
+		Command:                command,
+		RunCommandFailedCounts: 0,
+	})
+	return err
+}
+
+// WriteFile 写入文件
+func (s *Controller) WriteFile(ctx context.Context, in consts.WriteFileParam) (err error) {
+	if !s.IsFileOrDirExist(ctx, in.FilePath) {
+		err = s.CreateFile(ctx, in.FilePath)
+		if err != nil {
+			return err
+		}
+	}
+	if in.Overwrite {
+		command := "echo \"" + in.Content + "\" > " + in.FilePath
+		_, err = s.RunCommand(consts.RunCommandConfig{
+			Command:                command,
+			RunCommandFailedCounts: 0,
+		})
+	} else {
+		command := "echo \"" + in.Content + "\" >> " + in.FilePath
+		_, err = s.RunCommand(consts.RunCommandConfig{
+			Command:                command,
+			RunCommandFailedCounts: 0,
+		})
+	}
+	return err
 }
