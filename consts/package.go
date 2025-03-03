@@ -2,6 +2,7 @@ package consts
 
 // PackageInfo 包信息
 type PackageInfo struct {
+	ID            string   `json:"id,omitempty"`
 	FullName      string   `json:"full_name,omitempty"`
 	Name          string   `json:"name,omitempty"`
 	Version       string   `json:"version,omitempty"`
@@ -15,12 +16,12 @@ type PackageInfo struct {
 }
 
 // InstallPackageParam 安装软件包入参
-type InstallPackageParam struct {
+type InstallPackagesParam struct {
 	PackageList []PackageInfo
 }
 
 // InstallPackageResult 安装软件包结果
-type InstallPackageResult struct {
+type InstallPackagesResult struct {
 	IgnoredInstallPackageList      []PackageInfo `json:"ignored_install_package_list"`
 	SuccessfullyInstallPackageList []PackageInfo `json:"successfully_install_package_list"`
 	FailedInstallPackageList       []PackageInfo `json:"failed_install_package_list"`

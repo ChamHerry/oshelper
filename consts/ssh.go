@@ -15,3 +15,17 @@ var DefaultSSHConfig = SSHConfig{
 	IPAddress: "",
 	Port:      22,
 }
+
+// GetSSHKeyParam 获取ssh公钥入参
+type GetSSHKeyParam struct {
+	Generate bool   `json:"generate",omitempty,default:false` // 是否生成公钥
+	KeyType  string `json:"key_type",omitempty`               // 公钥类型，可选值为 dsa | ecdsa | ed25519 | rsa | rsa1
+	Comment  string `json:"comment",omitempty`                // 公钥备注
+
+}
+
+// GetSSHKeyResult 获取ssh公钥结果
+type GetSSHKeyResult struct {
+	FilePath      string `json:"file_path",omitempty`       // 公钥文件路径
+	PubKeyContent string `json:"pub_key_content",omitempty` // 公钥内容
+}

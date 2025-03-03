@@ -10,7 +10,7 @@ import (
 	"github.com/ChamHerry/oshelper/utils"
 )
 
-// 下载文件
+// DownloadFile 下载文件
 func (s *Controller) DownloadFile(ctx context.Context, in consts.DownloadFileParam) (out consts.DownloadFileResult, err error) {
 	if in.URL == "" {
 		return out, fmt.Errorf("url is empty")
@@ -45,10 +45,64 @@ func (s *Controller) DownloadFile(ctx context.Context, in consts.DownloadFilePar
 	return out, nil
 }
 
-// 删除文件
+// DeleteFile 删除文件
 func (s *Controller) DeleteFile(ctx context.Context, in consts.DeleteFileParam) (out consts.DeleteFileResult, err error) {
 	command := "rm -rf " + in.FilePath
 	_, err = s.RunCommand(consts.RunCommandConfig{
+		Command:                command,
+		RunCommandFailedCounts: 0,
+	})
+	if err != nil {
+		return out, err
+	}
+	return out, nil
+}
+
+// IsFileExist 判断是否存在文件
+func (s *Controller) IsFileExist(ctx context.Context, in string) (out bool) {
+	command := "ls -a " + in
+	if _, err := s.RunCommand(consts.RunCommandConfig{
+		Command:                command,
+		RunCommandFailedCounts: 0,
+	}); err != nil {
+
+		return false
+	}
+	return true
+}
+
+// IsDirExist 判断是否存在文件夹
+func (s *Controller) IsDirExist(ctx context.Context, in string) (out bool) {
+	in = strings.TrimRight(in, "/")
+	command := "ls -a " + filepath.Dir(in) + " | grep \"" + filepath.Base(in) + "\""
+	if _, err := s.RunCommand(consts.RunCommandConfig{
+		Command:                command,
+		RunCommandFailedCounts: 0,
+	}); err != nil {
+		return false
+	}
+	return true
+}
+
+// IsFileOrDirExist 判断是否存在文件或文件夹
+func (s *Controller) IsFileOrDirExist(ctx context.Context, in string) (out bool) {
+	command := "test -e " + in
+	if _, err := s.RunCommand(consts.RunCommandConfig{
+		Command:                command,
+		RunCommandFailedCounts: 0,
+	}); err != nil {
+		return false
+	}
+	return true
+}
+
+// GetFileContent 获取文件内容
+func (s *Controller) GetFileContent(ctx context.Context, in string) (out string, err error) {
+	if !s.IsFileExist(ctx, in) {
+		return out, fmt.Errorf("file not found: %s", in)
+	}
+	command := "cat " + in
+	out, err = s.RunCommand(consts.RunCommandConfig{
 		Command:                command,
 		RunCommandFailedCounts: 0,
 	})

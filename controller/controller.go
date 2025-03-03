@@ -78,6 +78,8 @@ func (s *Controller) RunLocalCommand(config consts.RunCommandConfig) (ret string
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err = cmd.Run()
+	// g.Log().Debug(context.Background(), "stdout:", stdout.String())
+	// g.Log().Debug(context.Background(), "stderr:", stderr.String())
 	if err != nil {
 		config.RunCommandFailedCounts += 1
 		err = fmt.Errorf("failed to run command: %s", strings.TrimSpace(stderr.String()))

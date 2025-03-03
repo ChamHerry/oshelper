@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ChamHerry/oshelper/consts"
+	"github.com/ChamHerry/oshelper/utils"
 	"github.com/gogf/gf/v2/frame/g"
 )
 
@@ -28,17 +29,6 @@ func (s *Controller) getCentosSystemDetailVersion(config consts.SystemInfo) (ret
 		return match[2], nil
 	}
 	return config.VersionID, nil
-}
-
-// installCentosPackage 安装软件包
-func (s *Controller) installCentosPackage(ctx context.Context, in consts.InstallPackageParam) (installPackageResult consts.InstallPackageResult, err error) {
-	installPackageResult = consts.InstallPackageResult{}
-	installPackageResult.IgnoredInstallPackageList = make([]consts.PackageInfo, 0)
-	installPackageResult.SuccessfullyInstallPackageList = make([]consts.PackageInfo, 0)
-	installPackageResult.FailedInstallPackageList = make([]consts.PackageInfo, 0)
-	installPackageResult.Total = len(in.PackageList)
-
-	return installPackageResult, nil
 }
 
 // 获取已经安装的软件包列表
@@ -133,28 +123,31 @@ func (s *Controller) getCentosPackageFileList(ctx context.Context, in consts.Get
 	return out, nil
 }
 
-// getCentosPackagesFileList 获取多个软件包文件列表
-// func (s *Controller) getCentosPackagesFileList(ctx context.Context, in consts.GetPackagesFileListParam) (out consts.GetPackagesFileListResult, err error) {
-// 	AsyncOut, err := utils.AsyncCall(ctx, consts.AsyncCallParam{
-// 		Operation: func() (interface{}, error) {
-// 			for _, v := range in.PackageList {
-// 				packageFileList, err := s.getCentosPackageFileList(ctx, consts.GetPackageFileListParam{
-// 					PackageName: v,
-// 				})
-// 				if err != nil {
-// 					return nil, err
-// 				}
-// 				out.PackageList = append(out.PackageList, packageFileList)
-// 			}
-// 			return out, nil
-// 		},
-// 	})
-// 	if err != nil {
-// 		return out, err
-// 	}
-// 	for _, v := range AsyncOut.RetList {
-// 		g.Log().Debug(ctx, "v", v)
-// 		// out.PackageList = append(out.PackageList, v.Ret.(consts.GetPackageFileListResult).PackageInfo.Files...)
-// 	}
-// 	return out, nil
-// }
+// installCentosPackage 安装软件包
+func (s *Controller) installCentosPackages(ctx context.Context, in consts.InstallPackagesParam) (installPackageResult consts.InstallPackagesResult, err error) {
+	installPackageResult = consts.InstallPackagesResult{}
+	installPackageResult.IgnoredInstallPackageList = make([]consts.PackageInfo, 0)
+	installPackageResult.SuccessfullyInstallPackageList = make([]consts.PackageInfo, 0)
+	installPackageResult.FailedInstallPackageList = make([]consts.PackageInfo, 0)
+	installPackageResult.Total = len(in.PackageList)
+	// 获取已经安装的软件包列表
+	installedPackageList, err := s.getCentosInstalledPackageList(ctx, consts.GetInstalledPackageListParam{})
+	if err != nil {
+		return installPackageResult, err
+	}
+	installedPackageListMap := make(map[string]consts.PackageInfo)
+	for _, v := range installedPackageList.PackageList {
+		packageInfo, err := utils.ParseRPMName(v)
+		if err != nil {
+			return installPackageResult, err
+		}
+		installedPackageListMap[v] = packageInfo
+		g.Log().Debug(ctx, "packageInfo", packageInfo)
+	}
+
+	// for _, v := range in.PackageList {
+	// 	g.Log().Debug(ctx, "v", v)
+	// }
+
+	return installPackageResult, nil
+}

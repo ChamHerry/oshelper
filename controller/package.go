@@ -97,11 +97,11 @@ func (s *Controller) GetPackagesFileListAsync(ctx context.Context, in consts.Get
 }
 
 // InstallPackages 安装软件包列表
-func (s *Controller) InstallPackages(ctx context.Context, in consts.InstallPackageParam) (installPackageResult consts.InstallPackageResult, err error) {
+func (s *Controller) InstallPackages(ctx context.Context, in consts.InstallPackagesParam) (installPackageResult consts.InstallPackagesResult, err error) {
 	// packages := strings.Join(packageList, " ")
 	switch s.systemInfo.ID {
 	case "centos", "bclinux":
-		return s.installCentosPackage(ctx, in)
+		return s.installCentosPackages(ctx, in)
 	// case "ubuntu":
 	// return s.DebianInstallPackage(ctx, packageList)
 	default:
