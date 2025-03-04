@@ -10,12 +10,6 @@ const (
 	DefaultRunCommandFailedCounts = 3
 )
 
-// RunCommandConfig 用于存储远程运行参数
-type RunCommandConfig struct {
-	Command                string
-	RunCommandFailedCounts int
-}
-
 // 异步调用参数
 type AsyncCallParam struct {
 	Concurrency int

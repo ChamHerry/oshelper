@@ -26,3 +26,14 @@ type WriteFileParam struct {
 	Content   string
 	Overwrite bool
 }
+
+// FindFileParam 查找文件参数
+type FindFileParam struct {
+	DirPath  string
+	FileName string
+}
+
+// FindFileResult 查找文件结果
+type FindFileResult struct {
+	FilePathList []string `json:"file_path_list,omitempty"` // 文件路径列表
+}

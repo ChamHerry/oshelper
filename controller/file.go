@@ -183,3 +183,17 @@ func (s *Controller) WriteFile(ctx context.Context, in consts.WriteFileParam) (e
 	}
 	return err
 }
+
+// 查找文件
+func (s *Controller) FindFile(ctx context.Context, in consts.FindFileParam) (out consts.FindFileResult, err error) {
+	command := "find " + in.DirPath + " -name \"" + in.FileName + "\" 2>/dev/null"
+	content, err := s.RunCommand(consts.RunCommandConfig{
+		Command:                command,
+		RunCommandFailedCounts: 0,
+	})
+	if err != nil {
+		return out, err
+	}
+	out.FilePathList = strings.Split(strings.TrimSpace(content), "\n")
+	return out, nil
+}
