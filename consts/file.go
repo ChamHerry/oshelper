@@ -37,3 +37,13 @@ type FindFileParam struct {
 type FindFileResult struct {
 	FilePathList []string `json:"file_path_list,omitempty"` // 文件路径列表
 }
+
+// GetFileInfoParam 获取文件信息参数
+type GetFileInfoParam struct {
+	FilePath string
+}
+
+// GetFileInfoResult 获取文件信息结果
+type GetFileInfoResult struct {
+	FileInfo
+}

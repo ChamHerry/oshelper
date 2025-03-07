@@ -5,13 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net"
 	"os/exec"
 	"strconv"
 	"strings"
 
 	"github.com/ChamHerry/oshelper/consts"
 	"github.com/ChamHerry/oshelper/utils"
+	"github.com/gogf/gf/v2/frame/g"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -34,11 +34,11 @@ func NewController(config consts.SSHConfig) (controller *Controller, err error) 
 	if config.Username == "" {
 		config.Username = consts.DefaultSSHConfig.Username
 	}
-	conn, err := net.DialTimeout("tcp", config.IPAddress+":"+strconv.Itoa(config.Port), consts.DefaultDialTimeout)
-	if err != nil {
-		return controller, err
-	}
-	defer conn.Close()
+	// conn, err := net.DialTimeout("tcp", config.IPAddress+":"+strconv.Itoa(config.Port), consts.DefaultDialTimeout)
+	// if err != nil {
+	// 	return controller, err
+	// }
+	// defer conn.Close()
 
 	sshConfig := &ssh.ClientConfig{
 		User: config.Username,
@@ -46,6 +46,7 @@ func NewController(config consts.SSHConfig) (controller *Controller, err error) 
 			ssh.Password(config.Password),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         consts.DefaultDialTimeout,
 	}
 	ServerAddress := config.IPAddress + ":" + strconv.Itoa(config.Port)
 	client, err := ssh.Dial("tcp", ServerAddress, sshConfig)
@@ -300,4 +301,53 @@ func (s *Controller) CheckProgram(program string) (bool, error) {
 		RunCommandFailedCounts: 0,
 	})
 	return out != "", err
+}
+
+// 获取系统文件清单
+func (s *Controller) GetSystemFileList(ctx context.Context, in consts.GetSystemFileParam) (out consts.GetSystemFileResult, err error) {
+	// command := "ls -l " + in.FilePath
+	// out, err := s.RunCommand(consts.RunCommandConfig{
+	// 	Command:                command,
+	// 	RunCommandFailedCounts: 0,
+	// })
+	return out, nil
+}
+
+// 获取某个路径下的文件清单
+func (s *Controller) GetFilePathList(ctx context.Context, in consts.GetFilePathListParam) (out consts.GetFilePathListResult, err error) {
+	command := "ls -l " + in.FilePath
+	commandOut, err := s.RunCommand(consts.RunCommandConfig{
+		Command:                command,
+		RunCommandFailedCounts: 0,
+	})
+	if err != nil {
+		return out, err
+	}
+	lines := strings.Split(commandOut, "\n")
+	g.Log().Debug(ctx, "lines:", lines)
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 9 {
+			continue
+		}
+		fileName := fields[8]
+		fileInfo := consts.FileInfo{
+			Name: fileName,
+		}
+		fileInfo.Size, err = strconv.Atoi(fields[4])
+		if err != nil {
+			return out, err
+		}
+		fileInfo.Mode = fields[0]
+		fileInfo.ModTime = fields[5] + " " + fields[6]
+		fileInfo.FileType = fields[6]
+		fileInfo.User = fields[2]
+		fileInfo.Group = fields[3]
+		fileInfo.LinkPath = fields[8]
+		out.FileInfoList = append(out.FileInfoList, fileInfo)
+	}
+	return out, nil
 }

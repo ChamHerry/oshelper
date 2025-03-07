@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/ChamHerry/oshelper/consts"
@@ -184,7 +185,7 @@ func (s *Controller) WriteFile(ctx context.Context, in consts.WriteFileParam) (e
 	return err
 }
 
-// 查找文件
+// FindFile 查找文件
 func (s *Controller) FindFile(ctx context.Context, in consts.FindFileParam) (out consts.FindFileResult, err error) {
 	command := "find " + in.DirPath + " -name \"" + in.FileName + "\" 2>/dev/null"
 	content, err := s.RunCommand(consts.RunCommandConfig{
@@ -195,5 +196,148 @@ func (s *Controller) FindFile(ctx context.Context, in consts.FindFileParam) (out
 		return out, err
 	}
 	out.FilePathList = strings.Split(strings.TrimSpace(content), "\n")
+	return out, nil
+}
+
+// GetFileInfo 获取文件信息
+func (s *Controller) GetFileInfo(ctx context.Context, in consts.GetFileInfoParam) (out consts.GetFileInfoResult, err error) {
+	basePath := filepath.Dir(in.FilePath)
+	fileName := filepath.Base(in.FilePath)
+	command := "ls -l " + strings.TrimRight(basePath, "/") + "/ | grep -w \"" + fileName + "\""
+	g.Log().Debug(ctx, "command:", command)
+	commandOut, err := s.RunCommand(consts.RunCommandConfig{
+		Command:                command,
+		RunCommandFailedCounts: 0,
+	})
+	if err != nil {
+		return out, err
+	}
+	lines := strings.Split(commandOut, "\n")
+	if len(lines) == 0 {
+		return out, fmt.Errorf("file not found: %s", in.FilePath)
+	}
+	fields := strings.Fields(lines[0])
+	if len(fields) < 9 {
+		return out, fmt.Errorf("file info format error: %s", lines[0])
+	}
+	out.FileInfo.Name = fields[8]
+	out.FileInfo.Size, err = strconv.Atoi(fields[4])
+	if err != nil {
+		return out, err
+	}
+	out.FileInfo.Mode = fields[0][:10]
+	out.FileInfo.ModTime = fields[5] + " " + fields[6]
+	switch fields[0][0] {
+	case 'd':
+		out.FileInfo.FileType = "directory"
+		out.Architecture = "noarch"
+	case '-':
+		out.FileInfo.FileType = "file"
+		// 获取架构
+		command = "file " + in.FilePath
+		g.Log().Debug(ctx, "command:", command)
+		commandOut, err = s.RunCommand(consts.RunCommandConfig{
+			Command:                command,
+			RunCommandFailedCounts: 0,
+		})
+		if err != nil {
+			return out, err
+		}
+		commandOut = strings.TrimSpace(commandOut)
+		if strings.Contains(commandOut, "x86-64") || strings.Contains(commandOut, "x86_64") {
+			out.FileInfo.Architecture = "x86_64"
+		} else if strings.Contains(commandOut, "ARM") || strings.Contains(commandOut, "aarch64") {
+			out.FileInfo.Architecture = "aarch64"
+		} else {
+			out.FileInfo.Architecture = "noarch"
+		}
+	case 'l':
+		out.FileInfo.FileType = "link"
+		out.FileInfo.LinkPath, err = s.GetRealPath(ctx, in.FilePath)
+		if err != nil {
+			return out, err
+		}
+		out.Architecture = "noarch"
+	}
+	out.FileInfo.User = fields[2]
+	out.FileInfo.Group = fields[3]
+	out.GlobalPath = in.FilePath
+	// // 获取架构
+	// var archPath string
+	// if out.FileInfo.FileType == "link" {
+	// 	archPath = out.FileInfo.LinkPath
+	// } else {
+	// 	archPath = in.FilePath
+	// }
+
+	return out, nil
+}
+
+// GetFileInfoByStat 获取文件信息
+// func (s *Controller) GetFileInfoByStat(ctx context.Context, filePath string) (out consts.GetFileInfoResult, err error) {
+// 	command := "stat -c %A,%s,%U,%G,%h,%i,%n,%F,%y,%z,%b,%X,%Y,%Z,%a,%b,%c,%d,%f,%g,%h,%i,%n,%o,%p,%s,%t,%u,%w,%x,%y,%z " + filePath
+// 	commandOut, err := s.RunCommand(consts.RunCommandConfig{
+// 		Command:                command,
+// 		RunCommandFailedCounts: 0,
+// 	})
+// 	if err != nil {
+// 		return out, err
+// 	}
+// 	lines := strings.Split(commandOut, "\n")
+// 	if len(lines) == 0 {
+// 		return out, fmt.Errorf("file not found: %s", filePath)
+// 	}
+// 	fields := strings.Fields(lines[0])
+// 	if len(fields) < 30 {
+// 		return out, fmt.Errorf("file info format error: %s", lines[0])
+// 	}
+// 	out.FileInfo.Name = fields[8]
+// 	out.FileInfo.Size, err = strconv.Atoi(fields[1])
+// 	if err != nil {
+// 		return out, err
+// 	}
+// 	out.FileInfo.Mode = fields[0]
+// 	out.FileInfo.ModTime = fields[5] + " " + fields[6]
+// 	switch fields[0][0] {
+// 	case 'd':
+// 		out.FileInfo.FileType = "directory"
+// 	case '-':
+// 		out.FileInfo.FileType = "file"
+// 	case 'l':
+// 		out.FileInfo.FileType = "link"
+// 		out.FileInfo.LinkPath, err = s.GetRealPath(ctx, filePath)
+// 		if err != nil {
+// 			return out, err
+// 		}
+// 	}
+// 	out.FileInfo.User = fields[2]
+// 	out.FileInfo.Group = fields[3]
+// 	out.GlobalPath = filePath
+// 	// 获取架构
+// 	var archPath string
+// 	if out.FileInfo.FileType == "link" {
+// 		archPath = out.FileInfo.LinkPath
+// 	} else {
+// 		archPath = filePath
+// 	}
+// 	command = "file " + archPath
+// 	commandOut, err = s.RunCommand(consts.RunCommandConfig{
+// 		Command:                command,
+// 		RunCommandFailedCounts: 0,
+// 	})
+// 	if err != nil {
+
+// }
+
+// 获取软连接的真实路径
+func (s *Controller) GetRealPath(ctx context.Context, filePath string) (string, error) {
+	commandConfig := consts.RunCommandConfig{
+		Command: fmt.Sprintf("readlink -f %s", filePath),
+	}
+	out, err := s.RunCommand(commandConfig)
+	if err != nil {
+		return "", fmt.Errorf("failed to get real path: %s", err)
+	}
+	out = strings.TrimSpace(out)
 	return out, nil
 }

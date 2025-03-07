@@ -4,6 +4,7 @@ go 1.23.1
 
 require (
 	github.com/gogf/gf/v2 v2.8.3
+	github.com/pkg/sftp v1.13.7
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	golang.org/x/crypto v0.35.0
 )
@@ -19,6 +20,7 @@ require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grokify/html-strip-tags-go v0.1.0 // indirect
+	github.com/kr/fs v0.1.0 // indirect
 	github.com/magiconair/properties v1.8.9 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
